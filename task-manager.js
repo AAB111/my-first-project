@@ -5,7 +5,7 @@ const EventEmitter = require('events');
 
 class TaskManager extends EventEmitter{
     tasks = []
-    
+/*  
     loadTasks(){
         fs.readFile('./tasks.json','utf8', (err, data) => {
             if (err) {
@@ -19,21 +19,21 @@ class TaskManager extends EventEmitter{
             });
         });  
     }
-/*
-    // async loadTasks(){
-    //     try {
-    //         const data = await fs.promises.readFile('./tasks.json', 'utf8');
-    //         const tasks = JSON.parse(data);
-    //         tasks.forEach(task => {
-    //             const { id, description, status } = task;
-    //             const newTask = new Task(id, description, status);
-    //             this.tasks.push(newTask);
-    //         });
-    //     } catch (err) {
-    //         console.error('Ошибка чтения файла: ', err);
-    //     }
-    // }
 */
+    async loadTasks(){
+        try {
+            const data = await fs.promises.readFile('./tasks.json', 'utf8');
+            const tasks = JSON.parse(data);
+            tasks.forEach(task => {
+                const { id, description, status } = task;
+                const newTask = new Task(id, description, status);
+                this.tasks.push(newTask);
+            });
+        } catch (err) {
+            console.error('Ошибка чтения файла: ', err);
+        }
+    }
+
     printTasks(){
         this.tasks.forEach(task => {
             console.log(task.toString());
@@ -43,20 +43,28 @@ class TaskManager extends EventEmitter{
     addTask(task){
         if (task instanceof Task){
             if (this.tasks.some(taskList => taskList.id === task.id)){
-                Console.error("Повторение id")
+                console.error("Повторение id")
             }
             this.tasks.push(task);
             this.saveTasks();
             this.emit('taskAdd',task);
             return;
         }
-        Console.error("Неверный тип входных данных")
+        else{
+            this.emit('taskAdd',null);
+        }
     }
 
     removeTask(id){
-        this.emit('taskRemove',this.tasks.filter(task=>task.id == id));
-        this.tasks = this.tasks.filter(task=>task.id !== id)
-        this.saveTasks();
+        const resIndex = this.tasks.findIndex((task)=>task.id == id)
+        if (resIndex != -1){
+            this.tasks.splice(resIndex,1);
+            this.saveTasks();
+            this.emit('taskRemove',resIndex);
+        }
+        else{
+            this.emit('taskRemove',resIndex);
+        }
     }
 
     saveTasks(){

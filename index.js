@@ -1,8 +1,16 @@
-const Task = require('./task.js')
-const task1 = new Task(tasks[0]['id'],tasks[0]['title'],tasks[0]['status']);
-const task2 = new Task(tasks[1]['id'],tasks[1]['title'],tasks[1]['status']);
-const task3 = new Task(tasks[2]['id'],tasks[2]['title'],tasks[2]['status']);
+const mongoose = require('mongoose');
+const config = require('dotenv/config');
+const dotenv = require('dotenv');
 
-console.log(task1.toString())
-console.log(task2.toString())
-console.log(task3.toString())
+const mongoUrl = `mongodb://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}?authSource=admin`;
+
+async function mongo(){
+    mongoose.connect(mongoUrl)
+        .then(async (mongo)=> {
+                console.log('MongoDB connected');
+            }
+        )
+        .catch(err=>console.log('MongoDB connection error: ',err));
+}
+
+module.exports = mongo;

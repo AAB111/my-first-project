@@ -1,35 +1,23 @@
 const fs = require('fs')
-const Task = require('./task.js');
 const { Console } = require('console');
 const EventEmitter = require('events');
-
+const TaskModel = require('./taskModel.js');
+const { default: mongoose } = require('mongoose');
 class TaskManager extends EventEmitter{
     tasks = []
-/*  
-    loadTasks(){
-        fs.readFile('./tasks.json','utf8', (err, data) => {
-            if (err) {
-                console.error('Ошибка чтения файла: ', err)
-                return;
-            }        
-            JSON.parse(data).forEach(task => {
-                const { id, description, status } = task;
-                const newTask = new Task(id, description, status);
-                this.tasks.push(newTask);
-            });
-        });  
-    }
-*/
+
     async loadTasks(){
-        try {
+        try 
+        {
             const data = await fs.promises.readFile('./tasks.json', 'utf8');
-            const tasks = JSON.parse(data);
-            tasks.forEach(task => {
-                const { id, description, status } = task;
-                const newTask = new Task(id, description, status);
-                this.tasks.push(newTask);
+            const tasksJSON = JSON.parse(data);
+            this.tasks = tasksJSON.map((task) => {
+                const newTask = new TaskModel(task);
+                newTask.save();
+                return newTask;
             });
-        } catch (err) {
+        }
+        catch (err) {
             console.error('Ошибка чтения файла: ', err);
         }
     }
@@ -41,12 +29,13 @@ class TaskManager extends EventEmitter{
     }
 
     addTask(task){
-        if (task instanceof Task){
+        if (task instanceof TaskModel){
             if (this.tasks.some(taskList => taskList.id === task.id)){
                 console.error("Повторение id")
             }
             this.tasks.push(task);
-            this.saveTasks();
+            console.log(task)
+            task.save();
             this.emit('taskAdd',task);
             return;
         }
@@ -55,16 +44,18 @@ class TaskManager extends EventEmitter{
         }
     }
 
-    removeTask(id){
-        const resIndex = this.tasks.findIndex((task)=>task.id == id)
-        if (resIndex != -1){
-            this.tasks.splice(resIndex,1);
-            this.saveTasks();
-            this.emit('taskRemove',resIndex);
-        }
-        else{
-            this.emit('taskRemove',resIndex);
-        }
+    async removeTask(id){
+        // const resIndex = this.tasks.findIndex((task)=>task.id == id)
+        const res = await TaskModel.findOneAndDelete({'id':id})
+        console.log(res)
+        this.emit('taskRemove',res);
+        // if (res['acknowledged'] != true){
+        //     this.tasks.splice(resIndex,1);
+        //     // this.saveTasks();
+        // }
+        // else{
+        //     this.emit('taskRemove',resIndex);
+        // }
     }
 
     saveTasks(){

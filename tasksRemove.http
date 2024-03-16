@@ -1,0 +1,2 @@
+DELETE http://localhost:5000/tasks/10
+Content-Type: application/json

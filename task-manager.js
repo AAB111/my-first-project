@@ -28,16 +28,10 @@ class TaskManager extends EventEmitter{
           });
     }
 
-    addTask(task){
+    async addTask(task){
         if (task instanceof TaskModel){
-            if (this.tasks.some(taskList => taskList.id === task.id)){
-                console.error("Повторение id")
-            }
-            this.tasks.push(task);
-            console.log(task)
-            task.save();
+            await task.save();
             this.emit('taskAdd',task);
-            return;
         }
         else{
             this.emit('taskAdd',null);
@@ -45,17 +39,8 @@ class TaskManager extends EventEmitter{
     }
 
     async removeTask(id){
-        // const resIndex = this.tasks.findIndex((task)=>task.id == id)
-        const res = await TaskModel.findOneAndDelete({'id':id})
-        console.log(res)
+        const res = await TaskModel.findOneAndDelete({'id':id});
         this.emit('taskRemove',res);
-        // if (res['acknowledged'] != true){
-        //     this.tasks.splice(resIndex,1);
-        //     // this.saveTasks();
-        // }
-        // else{
-        //     this.emit('taskRemove',resIndex);
-        // }
     }
 
     saveTasks(){

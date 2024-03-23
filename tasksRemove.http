@@ -1,2 +1,2 @@
-DELETE http://localhost:5000/tasks/10
+DELETE http://localhost:5000/tasks/basket
 Content-Type: application/json

@@ -3,19 +3,25 @@ const express = require('express');
 const TaskModel = require('./taskModel');
 const mongo = require('./index')
 const validateTaskData = require('./middlewares/validateTaskData');
-
+const cors = require('cors')
 const taskManager = new TaskManager();
 // taskManager.loadTasks();
 mongo();
 const app = express();
-app.use(express.json());
+const corsOptions = {
+    origin: 'http://127.0.0.1:5501',
+    method: ['GET','POST','DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type'],
+    preflightContinue: true
+  }
+app.use([express.json(),cors(corsOptions)]);
 
 const PORT = process.env.PORT || 3000;
 
 const taskRouter = express.Router();
 app.use('/tasks',taskRouter);
 
-taskRouter.get('/', async(req,res)=>{
+taskRouter.get('/', async (req,res)=>{
     try{
         const tasks = await TaskModel.find();
         res.json(tasks);
@@ -26,29 +32,48 @@ taskRouter.get('/', async(req,res)=>{
 });
 
 taskRouter.post('/',validateTaskData,async (req,res)=>{
-    try{
+    try
+    {
+        taskManager.once('taskAdd',(result)=>{
+            res.status(201).json(result);
+        });
         const newTask = new TaskModel(req.body);
-        const savedTask = await newTask.save();
-        res.status(201).json(savedTask);
+        await taskManager.addTask(newTask)
     }
     catch (err) {
         res.status(400).send(err.message);
     }
 });
 
-taskRouter.delete('/:id',async (req,res)=>{
-    taskManager.once('taskRemove',(result)=>{
-        if (result != null)
-        {
+// taskRouter.delete('/:id',async (req,res)=>{
+//     try
+//     {
+//         taskManager.once('taskRemove',(result)=>{
+//             if (result != null)
+//             {
+//                 res.status(200).json(result);
+//             }
+//             else{
+//                 res.status(404).send("Not found");
+//             }
+//         });
+//         await taskManager.removeTaskById(req.params.id);
+//     }
+//     catch (err){
+//         res.status(500).send(err.message);
+//     }
+// });
+taskRouter.delete('/:status',async (req,res)=>{
+    try{
+        taskManager.once('taskRemoveByStatus',(result)=>{
             res.status(200).json(result);
-        }
-        else{
-            res.status(400).send("Not found");
-        }
-    });
-    await taskManager.removeTask(req.params.id);
-});
-
+        });
+        await taskManager.removeTaskByStatus(req.params.status.toLowerCase());
+    }
+    catch (err){
+        res.status(500).send(err.message);
+    }
+})
 app.listen(PORT,()=>{
     console.log(`Server is running on port ${PORT}`);
 });

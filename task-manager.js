@@ -1,8 +1,7 @@
 const fs = require('fs')
-const { Console } = require('console');
 const EventEmitter = require('events');
 const TaskModel = require('./taskModel.js');
-const { default: mongoose } = require('mongoose');
+
 class TaskManager extends EventEmitter{
     tasks = []
 
@@ -29,28 +28,33 @@ class TaskManager extends EventEmitter{
     }
 
     async addTask(task){
-        if (task instanceof TaskModel){
-            await task.save();
-            this.emit('taskAdd',task);
-        }
-        else{
-            this.emit('taskAdd',null);
-        }
+        const res = await task.save();
+        this.emit('taskAdd',res);
     }
 
-    async removeTask(id){
-        const res = await TaskModel.findOneAndDelete({'id':id});
+    async removeTaskById(id){
+        const res = await TaskModel.findOneAndDelete({'_id':id});
         this.emit('taskRemove',res);
     }
+    async removeTaskByStatus(status){
+        let res = {}
+        let count_delete = 0
+        while(res != null){
+            res = await TaskModel.findOneAndDelete({'status':status});
+            count_delete += 1;
+        }
+        this.emit('taskRemove',count_delete);
+    }
 
-    saveTasks(){
-        fs.writeFile('./tasks.json',JSON.stringify(this.tasks),err => {
-            if (err) {
-              console.error('Ошибка записи файла: ',err);
-              return;
-            }
+    async saveTasks(){
+        try{
+            await fs.promises.writeFile('./tasks.json',JSON.stringify(this.tasks))
             console.log('Запись завершена.')
-        });
+        }
+        catch (err) 
+        {
+            console.error('Ошибка записи файла: ',err);    
+        }
     }
 }
 
